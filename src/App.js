@@ -1,202 +1,156 @@
 import React from "react";
 import "./App.css";
 
-class Cell extends React.Component {
+class Square extends React.Component {
   render() {
-    if (!this.props.isCapture) {
-      return (
-        <div className="cell" onClick={() => {
-          this.props.handleClick(this.props.rowIndex, this.props.colIndex);
-        }}>
-          {this.props.token}
-        </div>
-      );
-    }
     return (
-      <div className="cell">
-        {this.props.token}
-      </div>
+      <button
+        className="square"
+        onClick={() => {
+          this.props.onClick();
+        }}
+      >
+        {this.props.value}
+      </button>
     );
   }
 }
 
 class Board extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      board: [
-        [
-          {
-            id: 1,
-            isCapture: false,
-            token: ""
-          },
-          {
-            id: 2,
-            isCapture: false,
-            token: ""
-          },
-          {
-            id: 3,
-            isCapture: false,
-            token: ""
-          }
-        ],
-        [
-          {
-            id: 4,
-            isCapture: false,
-            token: ""
-          },
-          {
-            id: 5,
-            isCapture: false,
-            token: ""
-          },
-          {
-            id: 6,
-            isCapture: false,
-            token: ""
-          }
-        ],
-        [
-          {
-            id: 7,
-            isCapture: false,
-            token: ""
-          },
-          {
-            id: 8,
-            isCapture: false,
-            token: ""
-          },
-          {
-            id: 9,
-            isCapture: false,
-            token: ""
-          }
-        ]
-      ],
-      chessType: "O"
-    };
-    this.handleClick = this.handleClick.bind(this);
-  }
-
-  judgeFinish(rowIndex, colIndex) {
-    let token = this.state.board[rowIndex][colIndex].token;
-    let count = 0;
-    for (let k = 0; k < this.state.board.length; k++) {
-      if (token === this.state.board[rowIndex][k].token) {
-        count++;
-        if (count === 3) {
-          this.props.changeFinishState(token);
-          return;
-        }
-      } else {
-        break;
-      }
-    }
-    count = 0;
-    for (let k = 0; k < this.state.board.length; k++) {
-      if (token === this.state.board[k][colIndex].token) {
-        count++;
-        if (count === 3) {
-          this.props.changeFinishState(token);
-          return;
-        }
-      } else {
-        break;
-      }
-    }
-    if (this.state.board[0][0].token === this.state.board[1][1].token && this.state.board[1][1].token === this.state.board[2][2].token && this.state.board[2][2].token !== "") {
-      this.props.changeFinishState(this.state.board[0][0].token);
-      return;
-    }
-    if (this.state.board[0][2].token === this.state.board[1][1].token && this.state.board[1][1].token === this.state.board[2][0].token && this.state.board[2][0].token !== "") {
-      this.props.changeFinishState(this.state.board[0][2].token);
-    }
-  }
-
-  async handleClick(rowIndex, colIndex) {
-    await new Promise((resolve, reject) => {
-      this.setState((state) => {
-        let newBoard = state.board;
-        newBoard[rowIndex][colIndex].isCapture = true;
-        newBoard[rowIndex][colIndex].token = this.state.chessType;
-        return {
-          board: newBoard,
-          chessType: state.chessType === "O" ? "X" : "O"
-        };
-      });
-      resolve();
-    });
-    this.judgeFinish(rowIndex, colIndex);
+  renderSquare(i) {
+    return <Square
+      value={this.props.squares[i]}
+      onClick={() => {
+        this.props.onClick(i);
+      }}
+    />;
   }
 
   render() {
-    return (
-      <div className="board">
-        {this.state.board.map((rowArr, rowIndex) => {
-          return (
-            <div className="row" key={rowIndex}>
-              {rowArr.map((item, colIndex) => {
-                return (
-                  <Cell key={item.id} isCapture={item.isCapture} token={item.token} rowIndex={rowIndex}
-                        colIndex={colIndex}
-                        handleClick={this.handleClick}/>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-}
-
-class ResultDisplay extends React.Component {
-  render() {
-    if (this.props.isFinished) {
-      return (
-        <div>
-          Winner: {this.props.winner}
-        </div>
-      );
-    }
     return (
       <div>
-        Winner:
+        <div className="board-row">
+          {this.renderSquare(0)}
+          {this.renderSquare(1)}
+          {this.renderSquare(2)}
+        </div>
+        <div className="board-row">
+          {this.renderSquare(3)}
+          {this.renderSquare(4)}
+          {this.renderSquare(5)}
+        </div>
+        <div className="board-row">
+          {this.renderSquare(6)}
+          {this.renderSquare(7)}
+          {this.renderSquare(8)}
+        </div>
       </div>
     );
   }
 }
 
-class TicTacToe extends React.Component {
+class Game extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      isFinished: false,
-      winner: ""
+      history: [
+        {
+          squares: new Array(9).fill(null)
+        }
+      ],
+      xIsNext: true,
+      stepNumber: 0
     };
-    this.changeFinishState = this.changeFinishState.bind(this);
   }
 
-  changeFinishState(winner) {
+  calculateWinner(squares) {
+    const line = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6]
+    ];
+    for (let arr of line) {
+      if (squares[arr[0]] !== "" && squares[arr[0]] === squares[arr[1]] && squares[arr[1]] === squares[arr[2]]) {
+        return squares[arr[0]];
+      }
+    }
+    return null;
+  }
+
+  handleClick(i) {
+    const history = this.state.history;
+    const current = history[history.length - 1];
+    const squares = current.squares.slice();
+    if (this.calculateWinner(squares) || squares[i]) {
+      return;
+    }
+    squares[i] = this.state.xIsNext ? "X" : "O";
     this.setState((state) => ({
-      isFinished: true,
-      winner: winner
+      history: history.concat([{
+        squares: squares
+      }]),
+      xIsNext: !state.xIsNext,
+      stepNumber: state.stepNumber + 1
+    }));
+  }
+
+  jumpTo(step) {
+    this.setState((state) => ({
+      stepNumber: step,
+      xIsNext: (step % 2) === 0,
+      history: state.history.slice(0, step + 1)
     }));
   }
 
   render() {
+    let history = this.state.history;
+    let current = history[history.length - 1];
+    let winner = this.calculateWinner(current.squares);
+    let status;
+    if (winner) {
+      status = "Winner: " + winner;
+    } else {
+      status = "Next player: " + (this.state.xIsNext ? "X" : "O");
+    }
+    const moves = history.map((step, move) => {
+      const desc = move ? "Go to move #" + move : "Go to game start";
+      return (
+        <li key={move}>
+          <button
+            onClick={() => {
+              this.jumpTo(move);
+            }}>
+            {desc}
+          </button>
+        </li>
+      );
+    });
     return (
-      <div className="ticTacToe">
-        <Board changeFinishState={this.changeFinishState}/>
-        <ResultDisplay isFinished={this.state.isFinished} winner={this.state.winner}/>
-        {this.state.isFinished ? <div className="mask"/> : ""}
+      <div className="game">
+        <div className="game-board">
+          <Board
+            squares={history[this.state.stepNumber].squares}
+            onClick={(i) => {
+              this.handleClick(i);
+            }}/>
+        </div>
+        <div className="game-info">
+          <div className="status">
+            {status}
+          </div>
+          <ol>
+            {moves}
+          </ol>
+        </div>
       </div>
     );
   }
 }
 
-export default TicTacToe;
+export default Game;
+

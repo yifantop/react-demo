@@ -1,8 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import TicTacToe from "./App";
+
+import Game from "./App";
 
 ReactDOM.render(
-  <TicTacToe/>,
+  <Game/>,
   document.getElementById("root")
 );
